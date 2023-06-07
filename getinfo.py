@@ -2,7 +2,7 @@ import netCDF4 as nc
 
 # open the .nc file
 # file_path = '/home/koyomi/WRF-ARW/WPS/geo_em.d01.nc'
-file_path = '/home/koyomi/Repositories/June8th-Jiangxi_case/wrfout_d01_2016-06-16_00:00:00'
+file_path = '/home/koyomi/Repositories/June8th-Jiangxi_case/wrfout/wrfout_d01_2016-06-16_00:00:00'
 dataset = nc.Dataset(file_path)
 
 # Attain start time and end time

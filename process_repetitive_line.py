@@ -9,6 +9,6 @@ def remove_duplicates(input_file, output_file):
                     out_file.write(line)
                     lines_seen.add(line)
 
-input_file = os.path.join(os.getcwd(), 'fnl_jiangxi.txt')
-output_file = os.path.join(os.getcwd(), '1_fnl_jiangxi.txt')
+input_file = os.path.join(os.getcwd(), 'fnl_matthew.txt')
+output_file = os.path.join(os.getcwd(), '1_fnl_matthew.txt')
 remove_duplicates(input_file, output_file)

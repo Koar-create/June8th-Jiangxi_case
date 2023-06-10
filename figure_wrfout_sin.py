@@ -52,11 +52,12 @@ gl.ylabels_right = True
 gl.ylabel_style = {'fontsize': 14, 'fontname': 'Consolas'}
 
 # 绘制数据
-im = ax.pcolormesh(lon, lat, rain, cmap='jet', transform=ccrs.PlateCarree())
+im = ax.pcolormesh(lon, lat, rain, cmap='jet', vmin=0, vmax=350, transform=ccrs.PlateCarree())
 
 # 添加颜色条
 cax = plt.subplot(gs[1])
-cbar = plt.colorbar(im, ax=ax, orientation='vertical', cax=cax)
+cbar = plt.colorbar(im, extend='max', \
+    ax=ax, orientation='vertical', cax=cax)
 cbar.ax.tick_params(labelsize=12)
 cbar.set_label('units: mm', fontsize=12, fontname='Consolas')
 

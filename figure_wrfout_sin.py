@@ -58,8 +58,13 @@ im = ax.pcolormesh(lon, lat, rain, cmap='jet', vmin=0, vmax=350, transform=ccrs.
 cax = plt.subplot(gs[1])
 cbar = plt.colorbar(im, extend='max', \
     ax=ax, orientation='vertical', cax=cax)
-cbar.ax.tick_params(labelsize=12)
-cbar.set_label('units: mm', fontsize=12, fontname='Consolas')
+ticklabels = cbar.ax.get_yticklabels()          # 刻度1
+c_font = {'family': 'Consolas', 'size': 14}     # 刻度2
+cbar.ax.tick_params(labelsize=14)               # 刻度3
+for label in ticklabels:                        # 刻度4
+    label.set_fontproperties(c_font)            # 刻度5
+cbar.set_label('units: mm', fontdict=c_font)    # 标题1
+cbar.ax.set_aspect(40)  # 调整高度和宽度的比例，此处为10
 
 # 设置标题和坐标轴标签
 ax.set_title('without scheme, accumulated total cumulus precipitation '+timestr, fontsize=14, fontname='Arial')

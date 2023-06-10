@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 import netCDF4 as nc
 import os
 
-file_path = os.path.join(os.getcwd(), 'wrfout/wrfout_d01_2016-06-16_00:00:00')
+# file_path = os.path.join(os.getcwd(), 'wrfout/wrfout_d01_2016-06-16_00:00:00')
+file_path = 'D:\\Repositories\\adaptor\\adaptor.land_hourly.nc'
 dataset = nc.Dataset(file_path)
 
 variable_names = dataset.variables.keys()

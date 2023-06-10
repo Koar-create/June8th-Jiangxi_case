@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
+import matplotlib.gridspec as gridspec
 import cartopy.feature as cfeature
 from netCDF4 import Dataset
 
@@ -30,11 +31,11 @@ proj = ccrs.LambertConformal(central_longitude=115.5, central_latitude=25, stand
 # proj = ccrs.PlateCarree(central_longitude=115.5)
 
 # 创建绘图窗口和轴
-fig, ax = plt.subplots(figsize=(10, 8), subplot_kw=dict(projection=proj))
+fig = plt.subplots(figsize=(10, 8))
 
-
-
-
+# 创建自定义图形布局
+gs = gridspec.GridSpec(1, 2, width_ratios=[9.8, 0.2])  # 分为左右两列，左列宽度为9，右列宽度为1
+ax = plt.subplot(gs[0], projection=proj)
 
 # 绘制地图边界、海岸线和国家边界线
 ax.add_feature(cfeature.BORDERS, linewidth=0.5)
@@ -54,7 +55,8 @@ gl.ylabel_style = {'fontsize': 14, 'fontname': 'Consolas'}
 im = ax.pcolormesh(lon, lat, rain, cmap='jet', transform=ccrs.PlateCarree())
 
 # 添加颜色条
-cbar = plt.colorbar(im, ax=ax, orientation='vertical', pad=0.05)
+cax = plt.subplot(gs[1])
+cbar = plt.colorbar(im, ax=ax, orientation='vertical', cax=cax)
 cbar.ax.tick_params(labelsize=12)
 cbar.set_label('units: mm', fontsize=12, fontname='Consolas')
 
@@ -62,5 +64,7 @@ cbar.set_label('units: mm', fontsize=12, fontname='Consolas')
 ax.set_title('without scheme, accumulated total cumulus precipitation '+timestr, fontsize=14, fontname='Arial')
 ax.set_xlabel('Longitude', fontsize=14, fontname='Consolas')
 ax.set_ylabel('Latitude', fontsize=14, fontname='Consolas')
+
+plt.subplots_adjust(right=0.65)
 
 plt.show()

@@ -4,6 +4,30 @@ import cartopy.crs as ccrs
 import matplotlib.gridspec as gridspec
 import cartopy.feature as cfeature
 from netCDF4 import Dataset
+from PIL import Image
+
+def crop_image(image_path, fraction):
+    # 打开图像
+    image = Image.open(image_path)
+
+    # 获取图像宽度和高度
+    width, height = image.size
+
+    # 计算裁剪后的宽度
+    new_width = int(width * fraction)
+
+    # 创建一个新的图像对象，尺寸为裁剪后的尺寸
+    new_image = Image.new("RGB", (new_width, height))
+
+    # 裁剪图像
+    new_image.paste(image.crop((0, 0, new_width, height)), (0, 0))
+
+    # 保存裁剪后的图像
+    new_image.save(image_path)
+
+    # 关闭图像
+    image.close()
+    new_image.close()
 
 # 读取.nc文件
 nc_file = r'D:\Repositories\wrfout (no scheme, 2 domains) (fnl)\wrfout_d01_2016-06-16_03%3A00%3A00'
@@ -67,7 +91,7 @@ cbar.set_label('units: mm', fontdict=c_font)    # 标题1
 cbar.ax.set_aspect(40)  # 调整高度和宽度的比例，此处为10
 
 # 设置标题和坐标轴标签
-ax.set_title('without scheme\n, accumulated total cumulus precipitation '+timestr, fontsize=14, fontname='Arial')
+ax.set_title('without scheme \naccumulated total cumulus precipitation '+timestr, fontsize=14, fontname='Arial')
 ax.set_xlabel('Longitude', fontsize=14, fontname='Consolas')
 ax.set_ylabel('Latitude', fontsize=14, fontname='Consolas')
 
@@ -78,3 +102,5 @@ ax.set_ylim([np.min(lat)-700000, np.max(lat)+1100000])
 plt.subplots_adjust(right=0.65)
 
 plt.show()
+
+crop_image("D:\\Desktop\\Figure_1.png", 0.75)

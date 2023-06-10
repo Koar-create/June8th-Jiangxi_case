@@ -18,6 +18,11 @@ print("lon shape:", lon.shape)
 print("lat shape:", lat.shape)
 print("rainc shape:", rainc.shape)
 
+# Create time string
+date = nc_file.split("_")[-2]
+hour = nc_file.split("%3A")[-3][-2:]
+timestr = date + ' ' + hour + ':00:00 UTC'
+
 # 创建地图投影
 proj = ccrs.LambertConformal(central_longitude=115.5, central_latitude=25, standard_parallels=(30, 60))
 
@@ -45,7 +50,7 @@ cbar.ax.tick_params(labelsize=12)
 cbar.set_label('units: mm', fontsize=12, fontname='Consolas')
 
 # 设置标题和坐标轴标签
-ax.set_title('accumulated total cumulus precipitation', fontsize=14, fontname='Arial')
+ax.set_title('accumulated total cumulus precipitation\n'+timestr, fontsize=14, fontname='Arial')
 ax.set_xlabel('Longitude', fontsize=14, fontname='Consolas')
 ax.set_ylabel('Latitude', fontsize=14, fontname='Consolas')
 

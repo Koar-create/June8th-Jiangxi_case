@@ -12,11 +12,13 @@ nc_data = Dataset(nc_file, 'r')
 lon = nc_data.variables['XLONG'][0, :, :]
 lat = nc_data.variables['XLAT'][0, :, :]
 rainc = nc_data.variables['RAINC'][0, :, :]
+rainnc = nc_data.variables['RAINNC'][0, :, :]
+rain = rainc + rainnc
 
 # 输出维度数据
 print("lon shape:", lon.shape)
 print("lat shape:", lat.shape)
-print("rainc shape:", rainc.shape)
+print("rain shape:", rain.shape)
 
 # Create time string
 date = nc_file.split("_")[-2]
@@ -49,7 +51,7 @@ gl.ylabels_right = True
 gl.ylabel_style = {'fontsize': 14, 'fontname': 'Consolas'}
 
 # 绘制数据
-im = ax.pcolormesh(lon, lat, rainc, cmap='jet', transform=ccrs.PlateCarree())
+im = ax.pcolormesh(lon, lat, rain, cmap='jet', transform=ccrs.PlateCarree())
 
 # 添加颜色条
 cbar = plt.colorbar(im, ax=ax, orientation='vertical', pad=0.05)
@@ -57,7 +59,7 @@ cbar.ax.tick_params(labelsize=12)
 cbar.set_label('units: mm', fontsize=12, fontname='Consolas')
 
 # 设置标题和坐标轴标签
-ax.set_title('without scheme, accumulated total cumulus precipitation\n'+timestr, fontsize=14, fontname='Arial')
+ax.set_title('without scheme, accumulated total cumulus precipitation '+timestr, fontsize=14, fontname='Arial')
 ax.set_xlabel('Longitude', fontsize=14, fontname='Consolas')
 ax.set_ylabel('Latitude', fontsize=14, fontname='Consolas')
 

@@ -7,7 +7,8 @@ import cartopy.crs as ccrs
 import os
 
 # 打开.nc文件（以读写模式）
-file_path = '/home/koyomi/Downloads/geo_em.d00.nc'  # 将路径替换为你的文件路径
+# file_path = '/home/koyomi/Downloads/geo_em.d00.nc'  # 将路径替换为你的文件路径
+file_path = 'D:\\Repositories\\June8th-Jiangxi_case\\geo_em.d00.nc'
 
 nc_data = xr.open_dataset(file_path)
 lon = nc_data['XLONG_M'][0,:,:][0,:].data
@@ -31,13 +32,14 @@ projection = ccrs.LambertConformal(central_latitude=standard_parallels[0],
 
 fig, ax = plt.subplots(figsize=(8, 6), subplot_kw={'projection': projection})
 
-plt.pcolormesh(X, Y, hgt[0,:,:], shading='auto', transform=ccrs.PlateCarree(), cmap='jet')
+plt.pcolormesh(X, Y, hgt[0,:,:], vmin=0, vmax=500, shading='auto', transform=ccrs.PlateCarree(), cmap='jet')
 
 ax.gridlines(draw_labels=True, alpha=0.5)
 ax.set_title('HGT_M')
 ax.set_xlabel('Longitude')
 ax.set_ylabel('Latitude')
 
+plt.colorbar(ax=ax, extend='max')
 plt.show()
 
 # 关闭数据集，保存修改

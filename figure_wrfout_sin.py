@@ -67,9 +67,13 @@ cbar.set_label('units: mm', fontdict=c_font)    # 标题1
 cbar.ax.set_aspect(40)  # 调整高度和宽度的比例，此处为10
 
 # 设置标题和坐标轴标签
-ax.set_title('without scheme, accumulated total cumulus precipitation '+timestr, fontsize=14, fontname='Arial')
+ax.set_title('without scheme\n, accumulated total cumulus precipitation '+timestr, fontsize=14, fontname='Arial')
 ax.set_xlabel('Longitude', fontsize=14, fontname='Consolas')
 ax.set_ylabel('Latitude', fontsize=14, fontname='Consolas')
+
+# x-y axis limit
+ax.set_xlim([np.min(lon)-900000, np.max(lon)+900000])
+ax.set_ylim([np.min(lat)-700000, np.max(lat)+1100000])
 
 plt.subplots_adjust(right=0.65)
 

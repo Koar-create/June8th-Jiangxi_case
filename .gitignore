@@ -1,2 +1,3 @@
 *.log
-wrfout*fig_wrfout (no scheme, 2 domains) (fnl) fig_wrfout (scheme 1, 2 domains) (fnl) fig_wrfout (scheme 2, 2 domains) (fnl)
+wrfout*
+fig_wrfout (no scheme, 2 domains) (fnl) fig_wrfout (scheme 1, 2 domains) (fnl) fig_wrfout (scheme 2, 2 domains) (fnl)

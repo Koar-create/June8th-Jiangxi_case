@@ -1,4 +1,5 @@
 *.log
 wrfout*
 fig_*
-geo_em.d0*
+geo_em*
+__*

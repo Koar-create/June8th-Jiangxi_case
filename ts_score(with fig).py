@@ -5,15 +5,15 @@ from datetime import datetime, timedelta
 from matplotlib.font_manager import FontProperties
 
 def obtain_tp24h(tp, skipnum=24):
-    tp_added = np.concatenate((tp[:skipnum], tp[skipnum:] - tp[:(-1*skipnum)]), axis=0)
+    tp_added = np.concatenate((tp[:skipnum], tp[skipnum:] - tp[:-skipnum]), axis=0)
     tp_sum = np.cumsum(tp_added, axis=0)
     tp_24h = tp_sum[skipnum:]
     return tp_24h
 
-def get_rainx_in_24h(wrf_file_path, timelen=31, timeinterval=8, mode=''):
+def get_rainx_in_24h(wrf_file_path, timelen=39, timeinterval=3, mode=''):
     skipnum = int(24 / timeinterval)
-    nc_file_list = [f"{wrf_file_path}{date.replace(':', '%3A')}" for date in obtain_wrf_timestr(timelen, '%Y-%m-%d_%H:%M:%S')]
-
+    nc_file_list = [f"{wrf_file_path}{date.replace(':', '%3A')}" for date in obtain_wrf_timestr(timelen, format='%Y-%m-%d_%H:%M:%S', sday=16)]
+    
     for idx, nc_file in enumerate(nc_file_list):
         nc_data = Dataset(nc_file, 'r')
         rainc_temp  = nc_data.variables['RAINC' ][:].data
@@ -27,7 +27,7 @@ def get_rainx_in_24h(wrf_file_path, timelen=31, timeinterval=8, mode=''):
         elif mode.lower() == 'rainnc':
             rain24h_temp = rainnc_temp
         rain24h = rain24h_temp if idx == 0 else np.concatenate((rain24h, rain24h_temp), axis=0)
-    rain24h = rain24h[skipnum:, :, :] - rain24h[:(-1*skipnum), :, :]
+    rain24h = rain24h[skipnum:, :, :] - rain24h[:-skipnum, :, :]
     return rain24h
 
 def obtain_era5_timestr(era5_file_path, timeinterval=1):
@@ -49,6 +49,7 @@ def obtain_ts_score(tp, rain24, era5_timestr_list, wrf_timestr_list, closest_ind
     df = pd.read_csv(closest_index_path, sep='\t')
     closest_index_list = [tuple(row) for row in df.values]
     '''
+    ts_score_list = []
     for idx_wrf in range(len(wrf_timestr_list)):
         idx_era5 = era5_timestr_list.index(wrf_timestr_list[idx_wrf])
         tp_temp  = tp[idx_era5, :, :]
@@ -88,11 +89,14 @@ rain24 = [get_rainx_in_24h(i, mode='') for i in wrf_file_path] if dim4 == 'all' 
 tp_0, rain24_0 = tp.copy(), rain24.copy()
 threshold = float(dim5.split(' ')[0])
 tp[np.where(tp < threshold)] = np.nan
+'''
 if dim4 == 'all':
     for i in range(3):
         rain24[i][np.where(rain24[i] < threshold)] = np.nan
 else:
     rain24[np.where(rain24 < threshold)] = np.nan
+'''
+rain24 = [np.where(rain24[i] < threshold, np.nan, rain24[i]) for i in range(3)] if dim4 == 'all' else np.where(rain24 < threshold, np.nan, rain24)
 
 ## 3. get time strings of era5 file and wrfout file ##
 era5_timestr_list = obtain_era5_timestr(era5_file_path)

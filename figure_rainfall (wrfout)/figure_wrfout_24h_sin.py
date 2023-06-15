@@ -26,12 +26,13 @@ cmap_gray  = mpl.cm.gray_r
 cmap_color = mpl.cm.jet
 
 ## 0.5 dim
-dim1 = 'd01'       # 'd01'      or 'd02'
-dim2 = ''          # ''         or 'nan, '
+dim1 = 'd02'       # 'd01'      or 'd02'
+dim2 = 'nan, '          # ''         or 'nan, '
 dim3 = ''          # ''         or 'rainc'    or 'rainnc'
 dim4 = 'scheme 1'  # 'scheme 1' or 'scheme 2' or 'scheme 3'
 dim5 = '0.1 mm'    # '0.1 mm'   or '10 mm'    or '25 mm'    or '50 mm' or '100 mm' or '250 mm'
-dim6 = 'modified'  # ''         or 'modified'
+dim6 = ''          # ''         or 'modified'
+res  = '3 km'      # '3 km'     or '9 km'
 
 ## 0.6
 # string
@@ -42,10 +43,10 @@ timestr_UTC = obtain_wrf_timestr(timelen=1, format='%Y-%m-%d %H:%M:%S', sday=17,
 timestr_BJT = obtain_wrf_timestr(timelen=1, format='%Y-%m-%d %H:%M:%S', sday=17, shour=8)[0]
 title = f"{dim4.capitalize()}"      +         f"\n{var_long_name[dim3]} in past 24 hours" if dim6 == '' else \
         f"{dim4.capitalize()} (modified terrain)\n{var_long_name[dim3]} in past 24 hours"
-file_path = f"D:\\Repositories\\wrfout ({dim4}, 2 domains)"       +       f"\\wrfout_{dim1}_" if dim6 == '' else \
-            f"D:\\Repositories\\wrfout ({dim4}, 2 domains, modified terrain)\\wrfout_{dim1}_"
-save_path = f"D:\\Repositories\\June11th-Jiangxi_case_figures\\fig_wrfout ({dim4}, 2 domains)"       +       f"\\{dim2 + dim1}" if dim6 == '' else \
-            f"D:\\Repositories\\June11th-Jiangxi_case_figures\\fig_wrfout ({dim4}, 2 domains, modified terrain)\\{dim2 + dim1}"
+file_path = f"D:\\Repositories\\wrfout ({dim4}, 2 domains, {res})"       +       f"\\wrfout_{dim1}_" if dim6 == '' else \
+            f"D:\\Repositories\\wrfout ({dim4}, 2 domains, {res}, modified terrain)\\wrfout_{dim1}_"
+save_path = f"D:\\Repositories\\June11th-Jiangxi_case_figures\\fig_wrfout ({dim4}, 2 domains, {res})"       +       f"\\{dim2 + dim1}" if dim6 == '' else \
+            f"D:\\Repositories\\June11th-Jiangxi_case_figures\\fig_wrfout ({dim4}, 2 domains, {res}, modified terrain)\\{dim2 + dim1}"
 save_path = os.path.join(save_path, dim3.upper()) if dim3 != '' else save_path
 ## other
 central_latitude = 26           if dim1 == 'd01' else 28.4
@@ -78,7 +79,7 @@ add_cfeature(ax, linewidth=0.8)
 add_gridlines(ax, linewidth=1, color='gray', linestyle='--', alpha=0.5, fontsize=18, fontname='Consolas')
 
 # 3.4 restrict x-y extent
-box = [np.min(LON)+1.41, np.max(LON)-1.51, np.min(LAT)+0.10, np.max(LAT)-0.21] if dim1 == 'd01' else \
+box = [np.min(LON)+1.92, np.max(LON)-1.82, np.min(LAT)+0.10, np.max(LAT)-0.26] if dim1 == 'd01' else \
       [np.min(LON)+0.12, np.max(LON)-0.20, np.min(LAT)+0.00, np.max(LAT)-0.10]
 ax.set_extent(box, crs=ccrs.PlateCarree())
 

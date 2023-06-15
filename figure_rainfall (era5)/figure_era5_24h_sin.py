@@ -1,104 +1,97 @@
-import numpy as np, matplotlib as mpl, matplotlib.pyplot as plt
+## 0.1
+import numpy as np
+import matplotlib as mpl, matplotlib.pyplot as plt
 import cartopy.crs as ccrs, cartopy.feature as cfeature
 from cartopy.mpl.ticker import (LongitudeFormatter, LatitudeFormatter)
 from netCDF4 import Dataset
-import xarray as xr
 from datetime import datetime, timedelta
-import os, shapely.geometry as sgeom
+import os, sys
 
-china_provinces = cfeature.NaturalEarthFeature(
-    category='cultural', name='admin_1_states_provinces_lines',
-    scale='50m',         facecolor='none',
-    edgecolor='black',   linewidth=0.8)
-vmin, vmax = 0, 150
-norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
-levels = np.linspace(vmin, vmax, 6)
-cmap = mpl.cm.jet
+## 0.2
+sys.path.append("D:\\Repositories\\June8th-Jiangxi_case")
+sys.path.append("D:\\Repositories\\June8th-Jiangxi_case\\obtain")
+from obtain_tp_in_24h import obtain_tp_in_24h
+from add_figure       import add_cfeature, add_gridlines, add_colorbar
+from obtain_timestr   import obtain_era5_timestr
 
-dim1 = 'd01'  # or 'd02'
-dim2 = ''  # or 'nan, '
+## 0.3 function
+# no function.
 
-# read .nc file
-nc_file_path = 'D:\\Repositories\\adaptor\\adaptor.land_hourly_rain.nc'
-nc_data = xr.open_dataset(nc_file_path)
+## 0.4 basic settings
+vmin_color, vmax_color = 0, 150
+levels_color = np.linspace(vmin_color, vmax_color, 11)
+norm = mpl.colors.Normalize(vmin=vmin_color, vmax=vmax_color)
+cmap_color = mpl.cm.jet
 
-# read LON, LAT, tp
-year, month = np.array(nc_data["time"].dt.year), np.array(nc_data["time"].dt.month)
-day , hour  = np.array(nc_data["time"].dt.day ), np.array(nc_data["time"].dt.hour )
-lon = np.array(nc_data["lon"])
-lat = np.array(nc_data["lat"])
-tp  = np.array(nc_data["tp" ])
+## 0.5 dim
+dim1 = 'd01'       # 'd01'      or 'd02'
+dim2 = ''          # ''         or 'nan, '
+# dim3 = ''          # ''         or 'rainc'    or 'rainnc'
+# dim4 = 'scheme 1'  # 'scheme 1' or 'scheme 2' or 'scheme 3'
+dim5 = '0.1 mm'    # '0.1 mm'   or '10 mm'    or '25 mm'    or '50 mm' or '100 mm' or '250 mm'
+# dim6 = 'modified'  # ''         or 'modified'
 
+## 0.6
+# string
+title     = f"observation records (from ERA-5)\ntotal precipitation in\npast 24 hours"
+file_path = f'D:\\Repositories\\adaptor\\adaptor.land_hourly_rain.nc'
+save_path = f"D:\\Repositories\\June11th-Jiangxi_case_figures\\fig_era5\\{dim2 + dim1}"
+timestr_UTC = obtain_era5_timestr(file_path)[0]
+timestr_BJT = [date.strftime('%Y-%m-%d %H:%M:%S') for date in [datetime.strptime(timestr_UTC, '%Y-%m-%d %H:%M:%S')+timedelta(hours=8)]][0]
+## other
+central_latitude = 26           if dim1 == 'd01' else 28.4
+cax_box = [0.83,0.12,0.03,0.75] if dim1 == 'd01' else \
+          [0.83,0.15,0.03,0.71]
+
+## 1. read .nc file
+dataset = Dataset(file_path, 'r')
+lon, lat, tp = dataset["lon"][:].data, dataset["lat"][:].data, dataset["tp" ][:].data
+LON, LAT = np.meshgrid(lon, lat)
+dataset.close()
+
+## 2. process data: calculate total rainfall in past 24 hours.
+tp = obtain_tp_in_24h(tp, skipnum=24) * 1000
+XX = tp[0, :, :].copy()
+threshold = float(dim5.split(' ')[0])
+XX = np.where(XX < threshold, np.nan, XX) if dim2 == 'nan, ' else XX
 # print their shapes
-print("time shape:", year.shape)
 print("lon shape:",   lon.shape)
 print("lat shape:",   lat.shape)
-print("tp shape:",     tp.shape)
+print("tp shape:" ,    tp.shape)
 
-# title
-title = 'observation records (from ERA-5)\ntotal precipitation in\npast 24 hours'
-
-# time string
-date_UTC = datetime(year[0], month[0], day[0], hour[0], 0, 0)
-date_BJT = date_UTC + timedelta(hours=8)
-timestr_UTC = f"{date_UTC.strftime('%Y-%m-%d %H:%M:%S')} UTC"
-timestr_BJT = f"{date_BJT.strftime('%Y-%m-%d %H:%M:%S')} BJT"
-
-# create map projection
-proj = ccrs.LambertConformal(central_longitude=115.5, central_latitude=25, standard_parallels=(30, 60))
-
-# create figure and axes
+## 3.1 create figure and axes
 fig = plt.figure(figsize=(10, 8))
-ax  = plt.axes(projection=proj)
+ax  = plt.axes(projection=ccrs.LambertConformal(central_longitude=116, central_latitude=central_latitude, standard_parallels=(30.0, 60.0)))
 
-# paint borders, coastlines and states
-if   dim1 == 'd01':
-    ax.set_extent([105.2, 125.8, 18.6, 35.3], crs=ccrs.PlateCarree())
-elif dim1 == 'd02':
-    ax.set_extent([112.8, 119.4, 26.1, 30.8], crs=ccrs.PlateCarree())
-ax.add_feature(cfeature.BORDERS, linewidth=0.8)
-ax.add_feature(cfeature.COASTLINE, linewidth=0.8)
-# ax.add_feature(cfeature.STATES, linewidth=0.5)  # ruler
-ax.add_feature(china_provinces)
+## 3.2 add borders, coastlines, and states
+add_cfeature(ax, linewidth=0.8)
 
-# paint zonal and meridian grid
-gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, x_inline=False, y_inline=False, \
-    linewidth=1, color='gray', linestyle='--', alpha=0.5)
-gl.xformatter = LongitudeFormatter()
-gl.yformatter =  LatitudeFormatter()
-gl.xlabel_style  = {'fontsize': 18, 'fontname': 'Consolas'}
-gl.ylabel_style  = {'fontsize': 18, 'fontname': 'Consolas'}
-gl.top_labels    = False
-gl.bottom_labels = True
-gl.rotate_labels = False
-gl.left_labels = True
-gl.right_labels = False
+## 3.3 add grid
+add_gridlines(ax, linewidth=1, color='gray', linestyle='--', alpha=0.5, fontsize=18, fontname='Consolas')
 
-# figure
-XX = tp[0, :, :] * 1000
-im = ax.pcolormesh(lon, lat, XX, cmap=cmap, norm=norm, alpha=1, transform=ccrs.PlateCarree())
+# 3.4 restrict x-y extent
+box = [105.2, 125.8, 18.6, 35.3] if dim1 == 'd01' else \
+      [112.8, 119.4, 26.1, 30.8]
+ax.set_extent(box, crs=ccrs.PlateCarree())
 
-# add colorbar
-cax = fig.add_axes([0.83,0.14,0.03,0.69]) if dim1 == 'd01' else \
-    fig.add_axes([0.83,0.15,0.03,0.69])
-cbar = plt.colorbar(im, extend='max', \
-    ax=ax, orientation='vertical', cax=cax)
-cbar.ax.tick_params(labelsize=18)
-cbar.set_ticks(levels)
-fig.text(0.95, 0.5, 'units: mm', va='center', ha='center', rotation='vertical', \
-    fontdict={'size': 28, 'family': 'Consolas'})
+## 3.5 figure
+im = ax.pcolormesh(lon, lat, XX, cmap=cmap_color, norm=norm, alpha=1, transform=ccrs.PlateCarree())
 
-# put on title
-fig.text(0.5, 0.87, title, fontdict={'size': 24, 'family': 'Arial', 'weight': 'bold', 'ha': 'center'})
+## 3.6 add colorbar
+add_colorbar(im, ax, fig.add_axes(cax_box), fig, title='units: mm', levels=levels_color, extend='max', orientation='vertical', labelsize=18, fontsize=26, fontname='Consolas', x_axis=0.95, y_axis=0.5)
 
+## 3.7 set up title
+ax.set_title(title, fontdict={'size': 20, 'family': 'Arial', 'weight': 'bold'})
 # put on time string
-fig.text(0.71, 0.90, timestr_UTC, fontdict={'size': 16, 'family': 'Consolas', 'weight': 'normal'})
-fig.text(0.71, 0.86, timestr_BJT, fontdict={'size': 16, 'family': 'Consolas', 'weight': 'normal'})
+fig.text(0.82, 0.92, f"{timestr_UTC} UTC", fontdict={'size': 18, 'family': 'Consolas', 'weight': 'normal', 'ha': 'center'})
+fig.text(0.82, 0.88, f"{timestr_BJT} BJT", fontdict={'size': 18, 'family': 'Consolas', 'weight': 'normal', 'ha': 'center'})
 
-plt.subplots_adjust(right=0.79)
+## 3.8 adjust axes position
+plt.subplots_adjust(right=0.74)
 
+## 3.9 show, save and close
 # plt.show()
-
-plt.savefig(f"D:\\Desktop\\Figure_{dim1}.png", dpi=300)
-
-plt.close(fig)
+if not os.path.exists(save_path):
+    os.makedirs(save_path), print(f"Successfully create directory '{save_path}'!")
+plt.savefig(os.path.join(save_path, f"tp_2016-06-17 00.png"), dpi=300)
+plt.close(fig), print("DONE.")

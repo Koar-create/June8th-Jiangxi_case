@@ -1,50 +1,20 @@
-import os, numpy as np, pandas as pd, xarray as xr
+## 0.1
+import numpy as np, pandas as pd
 import matplotlib.pyplot as plt, matplotlib.dates as mdates
+from matplotlib.font_manager import FontProperties
+import xarray as xr
 from netCDF4 import Dataset
 from datetime import datetime, timedelta
-from matplotlib.font_manager import FontProperties
+import os, sys
 
-def obtain_tp24h(tp, skipnum=24):
-    tp_added = np.concatenate((tp[:skipnum], tp[skipnum:] - tp[:-skipnum]), axis=0)
-    tp_sum = np.cumsum(tp_added, axis=0)
-    tp_24h = tp_sum[skipnum:]
-    return tp_24h
+## 0.2
+sys.path.append('D:\\Repositories\\June8th-Jiangxi_case')
+sys.path.append('D:\\Repositories\\June8th-Jiangxi_case\\obtain')
+from    obtain_tp_in_24h import    obtain_tp_in_24h
+from obtain_rainx_in_24h import obtain_rainx_in_24h
+from  obtain_timestr import  obtain_wrf_timestr, obtain_era5_timestr
 
-def get_rainx_in_24h(wrf_file_path, timelen=39, timeinterval=3, mode=''):
-    skipnum = int(24 / timeinterval)
-    nc_file_list = [f"{wrf_file_path}{date.replace(':', '%3A')}" for date in obtain_wrf_timestr(timelen, format='%Y-%m-%d_%H:%M:%S', sday=16)]
-    
-    for idx, nc_file in enumerate(nc_file_list):
-        nc_data = Dataset(nc_file, 'r')
-        rainc_temp  = nc_data.variables['RAINC' ][:].data
-        rainnc_temp = nc_data.variables['RAINNC'][:].data
-        nc_data.close()
-        rain_temp   = rainc_temp + rainnc_temp
-        if mode == '':
-            rain24h_temp = rain_temp
-        elif mode.lower() == 'rainc':
-            rain24h_temp = rainc_temp
-        elif mode.lower() == 'rainnc':
-            rain24h_temp = rainnc_temp
-        rain24h = rain24h_temp if idx == 0 else np.concatenate((rain24h, rain24h_temp), axis=0)
-    rain24h = rain24h[skipnum:, :, :] - rain24h[:-skipnum, :, :]
-    return rain24h
-
-def obtain_era5_timestr(era5_file_path, timeinterval=1):
-    skipnum = int(24 / timeinterval)
-    era5_data = xr.open_dataset(era5_file_path)
-    time = era5_data["time"].dt
-    year, month, day , hour = time.year.data, time.month.data, time.day.data, time.hour.data
-    year, month, day , hour = year[skipnum:], month[skipnum:], day[skipnum:] , hour[skipnum:]
-    era5_data.close()
-    era5_timestr_list = [j.strftime('%Y-%m-%d %H:%M:%S') for j in [datetime(year[i], month[i], day[i], hour[i], 0, 0) for i in range(tp.shape[0])]]
-    return era5_timestr_list
-
-def obtain_wrf_timestr(timelen=31, format='%Y-%m-%d %H:%M:%S', dhour=3, syear=2016, smonth=6, sday=17, shour=0, smin=0, ssec=0):
-    delta = timedelta(hours=dhour)
-    wrf_timestr_list = [j.strftime(format) for j in [datetime(syear, smonth, sday, shour, smin, ssec) + delta * i for i in range(timelen)]]
-    return wrf_timestr_list
-
+## 0.3 function
 def obtain_ts_score(tp, rain24, era5_timestr_list, wrf_timestr_list, closest_index_path):
     df = pd.read_csv(closest_index_path, sep='\t')
     closest_index_list = [tuple(row) for row in df.values]
@@ -62,28 +32,34 @@ def obtain_ts_score(tp, rain24, era5_timestr_list, wrf_timestr_list, closest_ind
     ts_score_list = [sum((np.isnan(tp[era5_timestr_list.index(wrf_timestr_list[idx_wrf]), :, :][closest_index_list[i]]) and np.isnan(rain24[idx_wrf , :, :].ravel()[i])) or (not np.isnan(tp[era5_timestr_list.index(wrf_timestr_list[idx_wrf]), :, :][closest_index_list[i]]) and not np.isnan(rain24[idx_wrf , :, :].ravel()[i])) for i in range(len(rain24[idx_wrf , :, :].ravel()))) / (len(rain24[idx_wrf , :, :].ravel()) + 1) * 100 for idx_wrf in range(len(wrf_timestr_list))]
     return ts_score_list
 
+## 0.4 basic setting
 font = FontProperties(family='Consolas')
 
+## 0.5 dim
 dim1 = 'd02'     # 'd01'      or 'd02'
-dim4 = 'all'     # 'scheme 1' or 'scheme 2' or 'scheme 3' or 'all'
+dim4 = 'scheme 1'     # 'scheme 1' or 'scheme 2' or 'scheme 3' or 'all'
 dim5 = '10 mm'  # '0.1 mm'   or '10 mm' or '25 mm' or '50 mm'  or '100 mm' or '250 mm'
+res  = '9 km'
 
+## 0.6
+# string
 era5_file_path     = f'D:\\Repositories\\adaptor\\adaptor.land_hourly_rain.nc'
-wrf_file_path      = f"D:\\Repositories\\wrfout ({dim4}"+f", 2 domains)\\wrfout_{dim1}_" if dim4 != 'all' else \
-                    [f"D:\\Repositories\\wrfout (scheme {i}, 2 domains)\\wrfout_{dim1}_" for i in range(1, 4)]
+wrf_file_path      = f"D:\\Repositories\\wrfout ({dim4}"+f", 2 domains, {res})\\wrfout_{dim1}_" if dim4 != 'all' else \
+                    [f"D:\\Repositories\\wrfout (scheme {i}, 2 domains, {res})\\wrfout_{dim1}_" for i in range(1, 4)]
 save_path          = f"D:\\Repositories\\June11th-Jiangxi_case_figures\\fig_ts-score"
-closest_index_path = f'D:\\Repositories\\June8th-Jiangxi_case\\closest_index_list.txt'
+closest_index_path = f"D:\\Repositories\\June8th-Jiangxi_case\\closest_index_list_{res}.txt"
 title = f"TS score series of 3 schemes from 2016-06-17 00:00:00\nto 2016-06-20 18:00:00 (UTC) ({dim5})" if dim4 == 'all' else \
         f"TS score series of {dim4}" +"from 2016-06-17 00:00:00\nto 2016-06-20 18:00:00 (UTC)"
+## other
 
-## 1.read nc files ##
+## 1. read nc files ##
 # read era5 file
 era5_data = xr.open_dataset(era5_file_path)
 tp = era5_data["tp" ][:].data
 era5_data.close()
-tp = obtain_tp24h(tp)
+tp = obtain_tp_in_24h(tp)
 # read wrfout files
-rain24 = [get_rainx_in_24h(i, mode='') for i in wrf_file_path] if dim4 == 'all' else get_rainx_in_24h(wrf_file_path, mode='')
+rain24 = [obtain_rainx_in_24h(i, mode='') for i in wrf_file_path] if dim4 == 'all' else obtain_rainx_in_24h(wrf_file_path, mode='')
 
 ## 2. process data ##
 tp_0, rain24_0 = tp.copy(), rain24.copy()
@@ -137,7 +113,7 @@ if os.path.exists(save_path):
 else:
     os.makedirs(save_path)
     print(f"Successfully create directory {save_path}.")
-plt.savefig(os.path.join(save_path, f"ts-score_{dim4}_{dim5}.png"), dpi=100)
+plt.savefig(os.path.join(save_path, f"ts-score_{dim4}_{dim5}_{res}.png"), dpi=100)
 
 ## 7. close figure ##
 plt.close(fig)
